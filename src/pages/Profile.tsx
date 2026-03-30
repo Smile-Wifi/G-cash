@@ -1,11 +1,18 @@
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.tsx';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { LogOut, User, Phone, Mail, Shield, ChevronRight, Settings, HelpCircle } from 'lucide-react';
+import { LogOut, User, Phone, Mail, Shield, ChevronRight, Settings, HelpCircle, Fingerprint } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Profile() {
   const { profile } = useAuth();
+  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+
+  useEffect(() => {
+    const enabled = localStorage.getItem('biometrics_enabled') === 'true';
+    setBiometricsEnabled(enabled);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -13,6 +20,25 @@ export default function Profile() {
       toast.success("Logged out successfully");
     } catch (error: any) {
       toast.error(error.message);
+    }
+  };
+
+  const toggleBiometrics = () => {
+    const newState = !biometricsEnabled;
+    if (newState) {
+      const password = prompt("Please enter your password to enable biometrics (Simulation):");
+      if (password) {
+        localStorage.setItem('biometrics_enabled', 'true');
+        localStorage.setItem('saved_password', password);
+        localStorage.setItem('saved_email', profile?.email || '');
+        setBiometricsEnabled(true);
+        toast.success("Biometric login enabled!");
+      }
+    } else {
+      localStorage.removeItem('biometrics_enabled');
+      localStorage.removeItem('saved_password');
+      setBiometricsEnabled(false);
+      toast.success("Biometric login disabled");
     }
   };
 
@@ -33,6 +59,27 @@ export default function Profile() {
         </div>
         <h2 className="text-xl font-bold text-gray-900">{profile?.displayName || 'User'}</h2>
         <p className="text-blue-600 text-xs font-bold uppercase tracking-widest mt-1">Fully Verified</p>
+      </div>
+
+      {/* Biometrics Toggle */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <Fingerprint size={20} />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Biometric Login</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase">Fingerprint or Face ID</p>
+            </div>
+          </div>
+          <button 
+            onClick={toggleBiometrics}
+            className={`w-12 h-6 rounded-full transition-colors relative ${biometricsEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+          >
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${biometricsEnabled ? 'left-7' : 'left-1'}`} />
+          </button>
+        </div>
       </div>
 
       {/* Info List */}
