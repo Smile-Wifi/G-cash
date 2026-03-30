@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import QrScanner from 'react-qr-scanner';
 import { useAuth } from '../hooks/useAuth.tsx';
 import { useWallet } from '../hooks/useWallet';
-import { X, QrCode, Scan as ScanIcon, Send } from 'lucide-react';
+import { X, QrCode, Scan as ScanIcon, Send, Download, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -13,7 +13,9 @@ export default function Scan() {
   const [mode, setMode] = useState<'scan' | 'receive' | 'send'>('scan');
   const [recipientId, setRecipientId] = useState('');
   const [amount, setAmount] = useState('');
+  const [receiveAmount, setReceiveAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   const handleScan = (data: any) => {
     if (data) {
@@ -21,6 +23,9 @@ export default function Scan() {
         const result = JSON.parse(data.text);
         if (result.uid) {
           setRecipientId(result.uid);
+          if (result.amount) {
+            setAmount(result.amount.toString());
+          }
           setMode('send');
         }
       } catch (e) {
@@ -45,6 +50,29 @@ export default function Scan() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const downloadQR = () => {
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.download = `G-Wallet-QR-${profile?.displayName}.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
   return (
@@ -93,21 +121,56 @@ export default function Scan() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center space-y-6"
+            className="space-y-6"
           >
-            <div className="bg-blue-50 p-4 rounded-2xl">
-              <QRCodeSVG 
-                value={JSON.stringify({ uid: profile?.uid, name: profile?.displayName })} 
-                size={200}
-                level="H"
-                includeMargin={true}
-              />
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center space-y-6">
+              <div className="bg-blue-50 p-4 rounded-2xl" ref={qrRef}>
+                <QRCodeSVG 
+                  value={JSON.stringify({ 
+                    uid: profile?.uid, 
+                    name: profile?.displayName,
+                    amount: receiveAmount ? parseFloat(receiveAmount) : undefined
+                  })} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="font-bold text-lg text-gray-900">{profile?.displayName}</h3>
+                <p className="text-gray-500 text-sm">{profile?.phoneNumber}</p>
+                {receiveAmount && (
+                  <p className="text-blue-600 font-bold text-xl mt-2">₱ {parseFloat(receiveAmount).toLocaleString()}</p>
+                )}
+              </div>
+              
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={downloadQR}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+                >
+                  <Download size={18} /> Save
+                </button>
+              </div>
             </div>
-            <div className="text-center">
-              <h3 className="font-bold text-lg text-gray-900">{profile?.displayName}</h3>
-              <p className="text-gray-500 text-sm">{profile?.phoneNumber}</p>
+
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+              <div className="flex items-center gap-2 text-blue-600">
+                <Info size={18} />
+                <h4 className="font-bold text-sm">Request Specific Amount</h4>
+              </div>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₱</span>
+                <input
+                  type="number"
+                  placeholder="Optional: Enter amount"
+                  className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={receiveAmount}
+                  onChange={(e) => setReceiveAmount(e.target.value)}
+                />
+              </div>
+              <p className="text-[10px] text-gray-400">Setting an amount will embed it in the QR code for the sender.</p>
             </div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Scan to pay me</p>
           </motion.div>
         )}
 

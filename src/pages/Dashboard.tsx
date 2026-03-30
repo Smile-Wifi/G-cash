@@ -15,7 +15,7 @@ export default function Dashboard() {
     { icon: Send, label: 'Send', color: 'bg-blue-100 text-blue-600', path: '/scan' },
     { icon: Plus, label: 'Cash In', color: 'bg-green-100 text-green-600', action: () => cashIn(500) },
     { icon: CreditCard, label: 'Bills', color: 'bg-orange-100 text-orange-600' },
-    { icon: Phone, label: 'Load', color: 'bg-purple-100 text-purple-600' },
+    { icon: ShoppingBag, label: 'Pay QR', color: 'bg-purple-100 text-purple-600', path: '/scan' },
   ];
 
   return (
@@ -48,8 +48,15 @@ export default function Dashboard() {
         className="bg-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden"
       >
         <div className="relative z-10">
-          <p className="text-blue-100 text-sm mb-1">Available Balance</p>
-          <h2 className="text-3xl font-bold">₱ {profile?.balance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-blue-100 text-sm mb-1">Available Balance</p>
+              <h2 className="text-3xl font-bold">₱ {profile?.balance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            </div>
+            <Link to="/scan" className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm hover:bg-white/30 transition-colors">
+              <ShoppingBag size={24} />
+            </Link>
+          </div>
           <div className="mt-4 flex gap-2">
             <span className="bg-blue-500/30 px-3 py-1 rounded-full text-xs font-medium">GCash Fully Verified</span>
           </div>
