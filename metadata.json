@@ -1,0 +1,5 @@
+{
+  "name": "G-Wallet",
+  "description": "A mobile-first digital wallet application with peer-to-peer transfers, transaction history, and an admin management panel.",
+  "requestFramePermissions": ["camera"]
+}
